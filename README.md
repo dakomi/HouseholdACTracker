@@ -54,7 +54,7 @@ HouseholdACTracker/
 ├── backend/                  # Node.js + Express + TypeScript
 │   ├── prisma/
 │   │   ├── schema.prisma     # Database schema
-│   │   └── seed.ts           # Sample data (5 users, 4 zones)
+│   │   └── seed.ts           # Sample data (5 users, 4 zones, 19 sessions, settings)
 │   ├── src/
 │   │   ├── app.ts            # Express app + CORS
 │   │   ├── server.ts         # HTTP server + Socket.io
@@ -62,8 +62,8 @@ HouseholdACTracker/
 │   │   ├── routes/           # users, zones, sessions, reports, settings, bot
 │   │   ├── services/         # usageCalculator, messengerBot, socketService
 │   │   └── prisma/client.ts  # Prisma singleton
-│   ├── tests/
-│   │   └── usageCalculator.test.ts  # 17 unit tests
+│   └── tests/
+│   │   └── usageCalculator.test.ts  # 20 unit tests
 │   ├── .env.example
 │   └── package.json
 │
@@ -141,6 +141,26 @@ Open http://localhost:3000 in your browser.
 
 ---
 
+## Screenshots
+
+| Select User | Home (AC active) |
+|:-----------:|:----------------:|
+| ![Select User](docs/screenshots/select-user.png) | ![Home](docs/screenshots/home.png) |
+
+| Stats — Individual | Stats — Household |
+|:------------------:|:-----------------:|
+| ![Stats Individual](docs/screenshots/stats.png) | ![Stats Household](docs/screenshots/stats-household.png) |
+
+| All Sessions | My Last 5 Sessions |
+|:------------:|:-----------------:|
+| ![Sessions](docs/screenshots/sessions.png) | ![History](docs/screenshots/history.png) |
+
+| Admin — Members | Admin — Zones & Rates | Admin — Settings |
+|:---------------:|:--------------------:|:----------------:|
+| ![Admin Members](docs/screenshots/admin-members.png) | ![Admin Zones](docs/screenshots/admin-zones.png) | ![Admin Settings](docs/screenshots/admin-settings.png) |
+
+---
+
 ## Running Tests
 
 ```bash
@@ -148,12 +168,13 @@ cd backend
 npm test
 ```
 
-17 unit tests cover the usage calculator:
+20 unit tests cover the usage calculator:
 - Single-user session cost calculation
 - Exclusive vs shared overlap attribution
 - Zone combination rate matching
 - Midnight-spanning sessions
-- Edge cases (zero-duration, no zones, etc.)
+- Period filtering (today / week / month windows)
+- Edge cases (missing zones, empty sessions, ongoing sessions)
 
 ---
 

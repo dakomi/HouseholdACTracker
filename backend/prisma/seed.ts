@@ -56,6 +56,10 @@ async function main() {
   console.log('Seeding database...');
 
   // ── Zones ────────────────────────────────────────────────────────────────
+  // kWh/hr values are representative of typical split-system AC units:
+  //   Large room (living/dining): ~1.3–1.5 kWh/hr  (5–7 kW capacity unit)
+  //   Medium room (master bed):   ~1.2 kWh/hr       (4–5 kW capacity unit)
+  //   Small room  (bedroom 2):    ~1.0 kWh/hr       (2.5–3.5 kW capacity unit)
   const livingRoom    = await prisma.zone.upsert({ where: { id: 1 }, update: {}, create: { id: 1, name: 'Living Room',    kwh_per_hour: 1.5 } });
   const masterBedroom = await prisma.zone.upsert({ where: { id: 2 }, update: {}, create: { id: 2, name: 'Master Bedroom', kwh_per_hour: 1.2 } });
   const bedroom2      = await prisma.zone.upsert({ where: { id: 3 }, update: {}, create: { id: 3, name: 'Bedroom 2',      kwh_per_hour: 1.0 } });
@@ -94,6 +98,11 @@ async function main() {
   console.log('Users created:', users.map((u) => u.name).join(', '));
 
   // ── Settings singleton ───────────────────────────────────────────────────
+  // electricity_rate: 0.25 $/kWh — typical Australian residential flat tariff
+  //   (ranges roughly 0.22–0.35 $/kWh depending on state and retailer).
+  //   Change this to your local rate; e.g. 0.30 for VIC, 0.28 for NSW.
+  // auto_off_duration: 120 min — session auto-ends after 2 hours if not
+  //   manually closed (prevents runaway costs from forgotten sessions).
   const settings = await prisma.settings.upsert({
     where: { id: 1 },
     update: {},
