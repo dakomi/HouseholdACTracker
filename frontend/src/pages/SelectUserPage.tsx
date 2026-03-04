@@ -86,7 +86,16 @@ export function SelectUserPage() {
     <main className="page page-center">
       <h1 className="page-title">Who are you?</h1>
       {users.length === 0 ? (
-        <p className="empty-message">No users found. Add users in the Admin panel.</p>
+        <div className="setup-tip setup-tip-centered">
+          <p><span role="img" aria-label="waving hand">👋</span> <strong>Welcome to AC Tracker!</strong></p>
+          <p>No household members have been set up yet. Head to the Admin panel to add members and zones, then come back here to log in.</p>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/admin')}
+          >
+            Go to Admin Panel →
+          </button>
+        </div>
       ) : (
         <div className="user-grid">
           {users.map((user) => (

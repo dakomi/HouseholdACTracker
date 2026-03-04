@@ -104,9 +104,12 @@ cd backend
 npm install
 cp .env.example .env        # set DATABASE_URL (default: file:./dev.db)
 npx prisma db push          # create the database schema
-npm run prisma:seed         # load sample data
 npm run dev                 # starts on http://localhost:3001 (requires open terminal)
 ```
+
+> **First-time setup:** The app detects an empty database and shows inline guidance to help you add household members and AC zones. No seed data is loaded — you start clean.
+
+> **Optional — sample data:** Run `npm run prisma:seed` to pre-load 5 users, 4 zones, and 19 historical sessions. Useful for demos and testing; skip for a real household install.
 
 > **Note:** `npm run dev` uses `ts-node-dev` and will stop when you close the terminal.
 > `npm run build` (run by `npm start`) generates the Prisma client and compiles TypeScript
@@ -243,7 +246,7 @@ Railway offers a free-tier hobby plan with persistent storage.
 2. **Backend (Web Service):**
    - Connect your GitHub repo
    - Root directory: `backend`
-   - Build command: `npm install && npx prisma generate && npm run build`
+   - Build command: `npm install && npm run build`
    - Start command: `npm start`
    - Add environment variables in the Render dashboard
    - Add a PostgreSQL database and link it via `DATABASE_URL`
@@ -295,10 +298,10 @@ cd backend
 npm install
 cp .env.example .env
 # Edit .env: set FRONTEND_URL to your Pi's local IP, e.g. http://192.168.1.100:3000
-npx prisma generate
 npx prisma db push
-npx ts-node prisma/seed.ts
 npm run build
+# Optional: load sample data for demos/testing
+# npm run prisma:seed
 
 # 3. Frontend
 cd ../frontend
@@ -316,7 +319,7 @@ pm2 startup  # Follow the printed command to auto-start on boot
 
 # 5. Serve frontend with a simple static server
 npm install -g serve
-pm2 start "serve -s /home/pi/HouseholdACTracker/frontend/dist -l 3000" --name ac-tracker-web
+pm2 start "serve -s /home/pi/HouseholdACTracker/frontend/dist -p 3000" --name ac-tracker-web
 pm2 save
 ```
 

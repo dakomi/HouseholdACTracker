@@ -72,6 +72,11 @@ function MembersTab() {
       <div className="tab-toolbar">
         <button className="btn btn-primary" onClick={openAdd}>+ Add Member</button>
       </div>
+      {users.length === 0 && (
+        <div className="setup-tip">
+          <span role="img" aria-label="people">👥</span> <strong>Step 1 of 2 — Add household members.</strong> Each person logs their own AC sessions and tracks their share of usage independently. Add everyone who lives in the household.
+        </div>
+      )}
       {error && !showModal && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
       <div className="admin-list">
         {users.map((u) => (
@@ -203,6 +208,11 @@ function ZonesTab() {
           <h3>Zones</h3>
           <button className="btn btn-primary" onClick={openAddZone}>+ Add Zone</button>
         </div>
+        {zones.length === 0 && (
+          <div className="setup-tip">
+            <span role="img" aria-label="house">🏠</span> <strong>Step 2 of 2 — Add AC zones.</strong> A zone is a room or area with its own AC unit. Enter the name and its power consumption (check the spec plate on your unit, or use 1.0–1.5 kWh/hr as a typical estimate for a split-system).
+          </div>
+        )}
         <div className="admin-list">
           {zones.map((z) => (
             <div key={z.id} className="admin-list-item">
