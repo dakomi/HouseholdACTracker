@@ -102,12 +102,16 @@ cd HouseholdACTracker
 ```bash
 cd backend
 npm install
-cp .env.example .env
-npx prisma generate
-npx prisma db push
-npx ts-node prisma/seed.ts   # Load sample data
-npm run dev                  # Starts on http://localhost:3001
+cp .env.example .env        # set DATABASE_URL (default: file:./dev.db)
+npx prisma db push          # create the database schema
+npm run prisma:seed         # load sample data
+npm run dev                 # starts on http://localhost:3001 (requires open terminal)
 ```
+
+> **Note:** `npm run dev` uses `ts-node-dev` and will stop when you close the terminal.
+> `npm run build` (run by `npm start`) generates the Prisma client and compiles TypeScript
+> automatically — no separate `prisma generate` step needed.
+> For persistent background running, see [Running in the Background](#running-in-the-background) below.
 
 **Frontend** (new terminal):
 ```bash
@@ -117,6 +121,34 @@ npm run dev                  # Starts on http://localhost:3000
 ```
 
 Open http://localhost:3000 in your browser.
+
+### Running in the Background
+
+To keep the backend running after closing your terminal, use [PM2](https://pm2.keymetrics.io/):
+
+```bash
+npm install -g pm2
+
+# Build once (generates Prisma client + compiles TypeScript)
+cd backend
+npm run build
+
+# Start with PM2 (persists across terminal sessions)
+pm2 start dist/server.js --name ac-tracker-api
+pm2 save            # persist across reboots
+
+# To restart after code changes:
+npm run build && pm2 restart ac-tracker-api
+```
+
+For the frontend, serve the built assets with PM2 as well:
+
+```bash
+npm install -g serve
+cd frontend && npm run build
+pm2 start "serve -s dist -p 3000" --name ac-tracker-web
+pm2 save
+```
 
 ---
 
