@@ -76,6 +76,9 @@ export function getEffectiveRate(
   // Sum individual zone rates
   return activeZoneIds.reduce((sum, zId) => {
     const zone = zones.find((z) => z.id === zId);
+    if (!zone) {
+      console.warn(`getEffectiveRate: zone ID ${zId} not found in zones lookup — defaulting to 0 kWh/hr`);
+    }
     return sum + (zone ? zone.kwhPerHour : 0);
   }, 0);
 }

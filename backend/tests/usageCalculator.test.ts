@@ -37,7 +37,7 @@ const combinations: ZoneCombinationInput[] = [
 const RATE = 0.25;
 
 describe('getEffectiveRate', () => {
-  it('returns 0 for empty zone list', () => {
+  it('returns 0 when no zones are active', () => {
     expect(getEffectiveRate([], zones, combinations)).toBe(0);
   });
 
@@ -63,6 +63,30 @@ describe('getEffectiveRate', () => {
 
   it('uses combo even when zone order is different', () => {
     expect(getEffectiveRate([4, 1], zones, combinations)).toBe(4.0);
+  });
+
+  it('returns 0 and warns when zone IDs are referenced but the zones lookup is empty', () => {
+    // Simulates calling the calculator before zones are loaded from the DB.
+    // The function should not throw; it returns 0 and emits a console.warn for each missing zone.
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = getEffectiveRate([1, 2], [], []);
+    expect(result).toBe(0);
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('zone ID 1 not found in zones lookup')
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('returns 0 and warns when a single referenced zone ID is missing from the lookup', () => {
+    // Only zone id 99 is referenced; it does not exist in the zones array.
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = getEffectiveRate([99], zones, combinations);
+    expect(result).toBe(0);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('zone ID 99 not found in zones lookup')
+    );
+    warnSpy.mockRestore();
   });
 });
 
@@ -105,6 +129,24 @@ describe('calculateUsage - single user', () => {
     expect(result).toHaveLength(1);
     expect(result[0].totalHours).toBeGreaterThan(0.9);
     expect(result[0].totalHours).toBeLessThan(1.1);
+  });
+});
+
+describe('calculateUsage - missing zones lookup', () => {
+  it('returns kWh=0 and cost=0 when zones lookup is empty but sessions reference zone IDs', () => {
+    // This documents the behaviour when the zones table hasn't been seeded yet or
+    // zones are deleted after sessions are created. The calculator degrades gracefully
+    // (no throw) but the console.warn makes the data gap visible.
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const sessions = [makeSession(1, 1, 0, 120, [1, 2])]; // 2h with zones 1 & 2
+    const result = calculateUsage(sessions, [], [], RATE); // empty zones lookup
+
+    expect(result).toHaveLength(1);
+    expect(result[0].totalHours).toBeCloseTo(2);   // hours are still correct
+    expect(result[0].kWh).toBe(0);                 // no rate found → 0 kWh
+    expect(result[0].cost).toBe(0);                // no cost
+    expect(warnSpy).toHaveBeenCalled();             // warning was emitted
+    warnSpy.mockRestore();
   });
 });
 
