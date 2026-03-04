@@ -10,7 +10,7 @@ interface SessionCardProps {
 function formatDuration(start: string, end?: string | null): string {
   const startMs = new Date(start).getTime();
   const endMs = end ? new Date(end).getTime() : Date.now();
-  const mins = Math.floor((endMs - startMs) / 60000);
+  const mins = Math.max(0, Math.floor((endMs - startMs) / 60000));
   if (mins < 60) return `${mins}m`;
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }

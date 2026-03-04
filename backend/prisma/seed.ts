@@ -160,8 +160,14 @@ async function main() {
   await seedSession(17, 3, [3],    at(1, 19,  0), at(1, 19, 30));   // Carol
 
   // --- Today: one closed session + one ongoing ─────────────────────────────
-  await seedSession(18, 1, [1],    at(0,  7,  0), at(0,  8,  0));   // Alice, Living Room, 1h (closed)
-  await seedSession(19, 2, [2],    at(0,  9,  0), null);             // Bob,   Master Bedroom, ongoing
+  // Session 18: Alice, closed 1h session ending 30 min before the ongoing one started.
+  // Session 19: Bob's ongoing session started 30 minutes ago (relative to seed time so
+  //   it is always in the past regardless of timezone, avoiding a negative-duration display).
+  const ongoingStart = new Date(Date.now() - 30 * 60 * 1000);   // 30 min ago
+  const closedEnd    = new Date(ongoingStart.getTime() - 30 * 60 * 1000); // 60 min ago
+  const closedStart  = new Date(closedEnd.getTime()    - 60 * 60 * 1000); // 120 min ago
+  await seedSession(18, 1, [1],    closedStart, closedEnd);   // Alice, Living Room, 1h (closed)
+  await seedSession(19, 2, [2],    ongoingStart, null);        // Bob,   Master Bedroom, ongoing
 
   console.log('Sessions created: 19 sessions across 4-week window (exclusive, overlapping, combo, ongoing)');
   console.log('Seeding complete!');

@@ -12,7 +12,8 @@ import type { Session } from '../types';
 function formatTimeRemaining(startTime: string, autoOffMinutes: number): string {
   const startMs = new Date(startTime).getTime();
   const endMs = startMs + autoOffMinutes * 60 * 1000;
-  const remaining = Math.max(0, Math.floor((endMs - Date.now()) / 60000));
+  // Cap at autoOffMinutes so a future-dated start never inflates the display
+  const remaining = Math.max(0, Math.min(autoOffMinutes, Math.floor((endMs - Date.now()) / 60000)));
   if (remaining <= 0) return 'auto-off soon';
   if (remaining < 60) return `${remaining}m remaining`;
   return `${Math.floor(remaining / 60)}h ${remaining % 60}m remaining`;
