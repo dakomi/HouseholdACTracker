@@ -102,7 +102,7 @@ export function SelectUserPage() {
             <button
               key={user.id}
               className="user-tile"
-              onClick={() => handleSelectUser(user.id, !!user.pin)}
+              onClick={() => handleSelectUser(user.id, user.has_pin)}
             >
               <div
                 className="user-avatar user-avatar-lg"
@@ -111,7 +111,7 @@ export function SelectUserPage() {
                 {user.name[0].toUpperCase()}
               </div>
               <span className="user-tile-name">{user.name}</span>
-              {user.pin && <span className="user-tile-pin">🔒</span>}
+              {user.has_pin && <span className="user-tile-pin">🔒</span>}
             </button>
           ))}
         </div>

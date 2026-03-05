@@ -1,17 +1,25 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
-import { safeUserSelect } from '../prisma/selects';
 
 const router = Router();
+
+/**
+ * Strip the raw `pin` value and replace it with a boolean `has_pin` flag.
+ * This prevents PIN credentials from leaking in API responses while still
+ * letting the frontend know whether a PIN has been set.
+ */
+function toSafeUser<T extends { pin: string | null }>(
+  user: T
+): Omit<T, 'pin'> & { has_pin: boolean } {
+  const { pin, ...rest } = user;
+  return { ...rest, has_pin: pin !== null };
+}
 
 // GET /api/users
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const users = await prisma.user.findMany({
-      select: safeUserSelect,
-      orderBy: { id: 'asc' },
-    });
-    res.json({ data: users, error: null });
+    const users = await prisma.user.findMany({ orderBy: { id: 'asc' } });
+    res.json({ data: users.map(toSafeUser), error: null });
   } catch (err) {
     next(err);
   }
@@ -27,9 +35,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
     const user = await prisma.user.create({
       data: { name, colour, pin: pin ?? null, is_admin: is_admin ?? false },
-      select: safeUserSelect,
     });
-    res.status(201).json({ data: user, error: null });
+    res.status(201).json({ data: toSafeUser(user), error: null });
   } catch (err) {
     next(err);
   }
@@ -45,12 +52,11 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       data: {
         ...(name !== undefined && { name }),
         ...(colour !== undefined && { colour }),
-        ...(pin !== undefined && { pin }),
+        ...(pin ? { pin } : {}),
         ...(is_admin !== undefined && { is_admin }),
       },
-      select: safeUserSelect,
     });
-    res.json({ data: user, error: null });
+    res.json({ data: toSafeUser(user), error: null });
   } catch (err) {
     next(err);
   }
@@ -84,8 +90,7 @@ router.post('/authenticate', async (req: Request, res: Response, next: NextFunct
       res.status(401).json({ data: null, error: 'Invalid PIN' });
       return;
     }
-    const { pin: _pin, ...safeUser } = user;
-    res.json({ data: safeUser, error: null });
+    res.json({ data: toSafeUser(user), error: null });
   } catch (err) {
     next(err);
   }

@@ -2,7 +2,7 @@ export interface User {
   id: number;
   name: string;
   colour: string;
-  pin: string | null;
+  has_pin: boolean;
   is_admin: boolean;
   created_at: string;
 }
