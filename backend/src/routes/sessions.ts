@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
+import { safeUserSelect } from '../prisma/selects';
 import {
   emitSessionStarted,
   emitSessionEnded,
@@ -10,7 +11,7 @@ import {
 const router = Router();
 
 const sessionInclude = {
-  user: true,
+  user: { select: safeUserSelect },
   zones: { include: { zone: true } },
   sessionZoneLogs: true,
 };
@@ -18,7 +19,7 @@ const sessionInclude = {
 async function broadcastStatus() {
   const active = await prisma.session.findMany({
     where: { end_time: null },
-    include: { user: true, zones: { include: { zone: true } } },
+    include: { user: { select: safeUserSelect }, zones: { include: { zone: true } } },
   });
   emitStatusUpdate({ activeSessions: active, timestamp: new Date() });
 }

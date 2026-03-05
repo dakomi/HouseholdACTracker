@@ -32,7 +32,7 @@ function MembersTab() {
     setAdding(true); setEditing(null); setError(null);
   };
   const openEdit = (u: User) => {
-    setFormName(u.name); setFormColour(u.colour); setFormPin(u.pin ?? ''); setFormAdmin(u.is_admin);
+    setFormName(u.name); setFormColour(u.colour); setFormPin(''); setFormAdmin(u.is_admin);
     setEditing(u); setAdding(false); setError(null);
   };
   const closeModal = () => { setEditing(null); setAdding(false); setError(null); };
@@ -44,7 +44,7 @@ function MembersTab() {
       if (adding) {
         await createUser({ name: formName, colour: formColour, pin: formPin || undefined, is_admin: formAdmin });
       } else if (editing) {
-        await updateUser(editing.id, { name: formName, colour: formColour, pin: formPin || null, is_admin: formAdmin });
+        await updateUser(editing.id, { name: formName, colour: formColour, ...(formPin ? { pin: formPin } : {}), is_admin: formAdmin });
       }
       await refreshUsers();
       closeModal();
@@ -85,7 +85,7 @@ function MembersTab() {
             <div className="admin-item-info">
               <strong>{u.name}</strong>
               {u.is_admin && <span className="badge badge-admin">Admin</span>}
-              {u.pin && <span className="badge">PIN Set</span>}
+              {u.has_pin && <span className="badge">PIN Set</span>}
             </div>
             <div className="admin-item-actions">
               <button className="btn btn-sm btn-secondary" onClick={() => openEdit(u)}>Edit</button>
@@ -122,7 +122,7 @@ function MembersTab() {
           </div>
           <div className="form-group">
             <label htmlFor="m-pin">PIN (optional)</label>
-            <input id="m-pin" type="password" className="form-input" value={formPin} onChange={(e) => setFormPin(e.target.value)} placeholder="Leave blank for no PIN" />
+            <input id="m-pin" type="password" className="form-input" value={formPin} onChange={(e) => setFormPin(e.target.value)} placeholder={editing?.has_pin ? 'Leave blank to keep current PIN' : 'Leave blank for no PIN'} />
           </div>
           <div className="form-group form-group-check">
             <input id="m-admin" type="checkbox" checked={formAdmin} onChange={(e) => setFormAdmin(e.target.checked)} />

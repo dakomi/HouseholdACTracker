@@ -2,7 +2,7 @@ export interface User {
   id: number;
   name: string;
   colour: string;
-  pin: string | null;
+  has_pin: boolean;
   is_admin: boolean;
   created_at: string;
 }
@@ -57,12 +57,14 @@ export interface Settings {
   auto_off_duration: number;
   household_name: string;
   require_confirmation: boolean;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface UsageResult {
   userId: number;
-  hours: number;
+  totalHours: number;
+  exclusiveHours: number;
+  sharedHours: number;
   kWh: number;
   cost: number;
 }
