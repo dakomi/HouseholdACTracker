@@ -82,13 +82,14 @@ export function EditSessionModal({ session, onClose, onUpdated }: EditSessionMod
         />
       </div>
       <div className="form-group">
-        <label htmlFor="edit-end">End Time (leave blank if still active)</label>
+        <label htmlFor="edit-end">End Time {session.end_time ? '(session ended)' : '(leave blank if still active)'}</label>
         <input
           id="edit-end"
           type="datetime-local"
           className="form-input"
           value={endTime}
           onChange={(e) => setEndTime(e.target.value)}
+          disabled={!!session.end_time}
         />
       </div>
       <div className="form-group">

@@ -70,7 +70,7 @@ export const getSession = (id: number) => apiFetch<Session>(`/api/sessions/${id}
 export const startSession = (data: { user_id: number; zone_ids: number[]; start_time?: string }) =>
   apiFetch<Session>('/api/sessions', { method: 'POST', body: JSON.stringify(data) });
 export const endSession = (id: number) =>
-  apiFetch<Session>(`/api/sessions/${id}/end`, { method: 'PUT' });
+  apiFetch<Session>(`/api/sessions/${id}/end`, { method: 'POST' });
 export const updateSession = (id: number, data: Partial<{ start_time: string; end_time: string; zone_ids: number[] }>) =>
   apiFetch<Session>(`/api/sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteSession = (id: number) =>

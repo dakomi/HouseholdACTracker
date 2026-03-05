@@ -82,8 +82,8 @@ export function StatsPage() {
     ? usageResults.find((u) => u.userId === currentUser.id)
     : null;
   const totalHours = viewMode === 'individual'
-    ? (myUsage?.hours ?? 0)
-    : usageResults.reduce((s, u) => s + u.hours, 0);
+    ? (myUsage?.totalHours ?? 0)
+    : usageResults.reduce((s, u) => s + u.totalHours, 0);
   const totalKwh = viewMode === 'individual'
     ? (myUsage?.kWh ?? 0)
     : usageResults.reduce((s, u) => s + u.kWh, 0);
@@ -177,7 +177,7 @@ export function StatsPage() {
           <section className="section">
             <h2 className="section-title">Recent Sessions</h2>
             {recentSessions.length === 0 ? (
-              <p className="empty-message">No sessions found for this period.</p>
+              <p className="empty-message">No recent sessions found.</p>
             ) : (
               <div className="session-list">
                 {recentSessions.map((s) => (

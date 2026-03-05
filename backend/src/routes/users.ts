@@ -1,12 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
+import { safeUserSelect } from '../prisma/selects';
 
 const router = Router();
 
 // GET /api/users
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const users = await prisma.user.findMany({ orderBy: { id: 'asc' } });
+    const users = await prisma.user.findMany({
+      select: safeUserSelect,
+      orderBy: { id: 'asc' },
+    });
     res.json({ data: users, error: null });
   } catch (err) {
     next(err);
@@ -23,6 +27,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
     const user = await prisma.user.create({
       data: { name, colour, pin: pin ?? null, is_admin: is_admin ?? false },
+      select: safeUserSelect,
     });
     res.status(201).json({ data: user, error: null });
   } catch (err) {
@@ -43,6 +48,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
         ...(pin !== undefined && { pin }),
         ...(is_admin !== undefined && { is_admin }),
       },
+      select: safeUserSelect,
     });
     res.json({ data: user, error: null });
   } catch (err) {
