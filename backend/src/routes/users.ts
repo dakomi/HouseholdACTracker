@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
+import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/users
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, colour, pin, is_admin } = req.body;
     if (!name || !colour) {
@@ -43,7 +44,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PUT /api/users/:id
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { name, colour, pin, is_admin } = req.body;
@@ -63,7 +64,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /api/users/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     await prisma.user.delete({ where: { id } });

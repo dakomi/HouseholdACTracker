@@ -1,7 +1,18 @@
+import { Request } from 'express';
+
+// Augment Express Request with rawBody for bot webhook HMAC validation.
+declare module 'express-serve-static-core' {
+  interface Request {
+    rawBody?: Buffer;
+  }
+}
+
 import path from 'path';
 import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import usersRouter from './routes/users';
 import zonesRouter from './routes/zones';
@@ -13,6 +24,9 @@ import botRouter from './routes/bot';
 
 const app = express();
 
+// ── Security headers ─────────────────────────────────────────────────────────
+app.use(helmet());
+
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -21,7 +35,36 @@ app.use(
   })
 );
 
-app.use(express.json());
+// Parse JSON bodies and capture the raw buffer so the bot webhook can verify
+// the X-Hub-Signature-256 HMAC sent by Facebook.
+app.use(
+  express.json({
+    verify: (req: Request, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+// Prevents brute-force attacks against user PINs.
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,                   // max 20 attempts per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { data: null, error: 'Too many authentication attempts, please try again later.' },
+});
+app.use('/api/users/authenticate', authRateLimiter);
+
+// Prevents flooding of the Messenger bot webhook.
+const botWebhookLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,             // Facebook can send many events per minute; 60 is generous
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { data: null, error: 'Too many requests.' },
+});
+app.use('/api/bot/webhook', botWebhookLimiter);
 
 app.use('/api/users', usersRouter);
 app.use('/api/zones', zonesRouter);

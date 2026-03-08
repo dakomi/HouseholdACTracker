@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
+import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/zones
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, kwh_per_hour } = req.body;
     if (!name || kwh_per_hour === undefined) {
@@ -29,7 +30,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // PUT /api/zones/:id
-router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { name, kwh_per_hour } = req.body;
@@ -47,7 +48,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /api/zones/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     await prisma.zone.delete({ where: { id } });

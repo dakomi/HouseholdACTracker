@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
+import { requireAdmin } from '../middleware/auth';
 import { safeUserSelect } from '../prisma/selects';
 import {
   emitSessionStarted,
@@ -141,7 +142,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /api/sessions/:id
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     const session = await prisma.session.findUnique({ where: { id }, include: sessionInclude });
