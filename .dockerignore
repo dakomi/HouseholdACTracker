@@ -1,0 +1,30 @@
+# ── Docker build-context exclusions ──────────────────────────────────────────
+
+# Dependency caches (each stage runs its own npm ci)
+**/node_modules
+
+# TypeScript compiled output (rebuilt inside Docker)
+backend/dist
+frontend/dist
+
+# Local environment files – secrets must be passed as runtime env vars
+**/.env
+**/.env.*
+
+# SQLite database files
+**/*.db
+**/*.db-journal
+**/*.db-wal
+**/*.db-shm
+
+# Git history
+.git
+.gitignore
+
+# CI / editor artefacts
+.github
+.vscode
+*.log
+
+# Documentation / screenshots (not needed at runtime)
+docs/

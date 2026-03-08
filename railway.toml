@@ -1,0 +1,16 @@
+# ── Railway deployment configuration ──────────────────────────────────────────
+# Docs: https://docs.railway.com/reference/config-as-code
+
+[build]
+# Use the repo-level Dockerfile for an explicit, reproducible build.
+builder       = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# The backend exposes a /api/health endpoint used by Railway's health-checks.
+healthcheckPath    = "/api/health"
+healthcheckTimeout = 60          # seconds Railway waits for a 200 response
+
+# Restart the container if it crashes (up to 3 times before giving up).
+restartPolicyType       = "ON_FAILURE"
+restartPolicyMaxRetries = 3
