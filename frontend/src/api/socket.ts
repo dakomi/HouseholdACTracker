@@ -1,7 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 import type { Session, StatusUpdate } from '../types';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+// When VITE_API_URL is explicitly set to an empty string (single-service /
+// same-origin deployment), pass `undefined` so socket.io-client connects to
+// the current page origin instead of an empty URL.
+// In local development (VITE_API_URL unset), Vite proxies /socket.io → backend.
+const SOCKET_URL = import.meta.env.VITE_API_URL || undefined;
 
 let socket: Socket | null = null;
 

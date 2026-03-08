@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
 import { calculateUsage } from '../services/usageCalculator';
+import { requireAdmin } from '../middleware/auth';
+import { safeUserSelect } from '../prisma/selects';
 
 const router = Router();
 
@@ -151,15 +153,15 @@ router.get('/household', async (req: Request, res: Response, next: NextFunction)
 });
 
 // GET /api/data/export
-router.get('/export', async (_req: Request, res: Response, next: NextFunction) => {
+router.get('/export', requireAdmin, async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const [users, zones, combinations, sessions, settings] = await Promise.all([
+    const [rawUsers, zones, combinations, sessions, settings] = await Promise.all([
       prisma.user.findMany(),
       prisma.zone.findMany(),
       prisma.zoneCombination.findMany({ include: { zones: { include: { zone: true } } } }),
       prisma.session.findMany({
         include: {
-          user: true,
+          user: { select: safeUserSelect },
           zones: { include: { zone: true } },
           sessionZoneLogs: true,
         },
@@ -167,6 +169,9 @@ router.get('/export', async (_req: Request, res: Response, next: NextFunction) =
       }),
       prisma.settings.findUnique({ where: { id: 1 } }),
     ]);
+
+    // Strip raw PIN values from the user list before exporting
+    const users = rawUsers.map(({ pin, ...u }) => ({ ...u, has_pin: pin !== null }));
 
     res.json({
       data: {

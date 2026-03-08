@@ -10,7 +10,7 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 const server = http.createServer(app);
 initSocketService(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 

@@ -215,129 +215,170 @@ npm test
 
 ## Deployment
 
-### Option 1: Railway (Recommended — Free Tier)
+The app ships with a **`Dockerfile`** and **`railway.toml`** for one-command container deployments, plus a **`start.sh`** script for PaaS platforms that run a single build-and-start command.
 
-Railway offers a free-tier hobby plan with persistent storage.
+> **Architecture note:** The Dockerfile builds the React frontend with relative API URLs and copies it into the backend's `public/` directory.  At runtime, Express serves the frontend on the same port as the API, so you only need **one service and one `$PORT`**.
 
-1. Create an account at [railway.app](https://railway.app)
-2. Install the Railway CLI: `npm i -g @railway/cli`
-3. **Deploy backend:**
-   ```bash
-   cd backend
-   railway login
-   railway init
-   railway up
-   ```
-4. In the Railway dashboard → add environment variables from `.env.example`
-5. Add a PostgreSQL plugin in Railway and copy the `DATABASE_URL` to your env vars
-6. Run migrations: `railway run npx prisma migrate deploy`
-7. **Deploy frontend:**
-   ```bash
-   cd frontend
-   # Set VITE_API_URL to your Railway backend URL
-   echo "VITE_API_URL=https://your-backend.railway.app" > .env.production
-   npm run build
-   # Deploy the dist/ folder to Railway as a static site, or use Vercel (below)
-   ```
+---
 
-### Option 2: Render (Free Tier)
+### Option 1: Railway (one-click via GitHub UI)
 
-1. Create an account at [render.com](https://render.com)
-2. **Backend (Web Service):**
-   - Connect your GitHub repo
-   - Root directory: `backend`
-   - Build command: `npm install && npm run build`
-   - Start command: `npm start`
-   - Add environment variables in the Render dashboard
-   - Add a PostgreSQL database and link it via `DATABASE_URL`
-3. **Frontend (Static Site):**
-   - New Static Site → Root directory: `frontend`
-   - Build command: `npm install && npm run build`
-   - Publish directory: `dist`
-   - Add env var: `VITE_API_URL=https://your-backend.onrender.com`
+1. Go to [railway.app](https://railway.app) → **New Project → Deploy from GitHub repo → select this repo**.  
+   Railway detects the `Dockerfile` and `railway.toml` automatically.
+2. Add a **PostgreSQL** database plugin (Railway dashboard → *+ New* → *Database → Add PostgreSQL*).  
+   Railway injects `DATABASE_URL` into your service automatically.
+3. Set the following environment variables in the Railway service dashboard:
 
-> **Note:** Render free tier spins down after 15 minutes of inactivity; the first request after sleep may take ~30 seconds.
+   | Variable | Value |
+   |---|---|
+   | `FRONTEND_URL` | Your Railway app URL, e.g. `https://your-app.railway.app` |
+   | `MESSENGER_PAGE_ACCESS_TOKEN` | *(optional)* Facebook page token |
+   | `MESSENGER_VERIFY_TOKEN` | *(optional)* Messenger webhook verify token |
+   | `MESSENGER_APP_SECRET` | *(optional)* Facebook app secret |
 
-### Option 3: Fly.io (Free Tier)
+   > `PORT` and `DATABASE_URL` are injected by Railway automatically — do **not** set them manually.
 
-1. Install flyctl: `curl -L https://fly.io/install.sh | sh`
-2. `fly auth login`
-3. **Backend:**
-   ```bash
-   cd backend
-   fly launch --name ac-tracker-api
-   fly secrets set DATABASE_URL="file:./prod.db" PORT=3001 FRONTEND_URL=https://ac-tracker-web.fly.dev
-   fly deploy
-   ```
-4. **Frontend:**
-   ```bash
-   cd frontend
-   echo "VITE_API_URL=https://ac-tracker-api.fly.dev" > .env.production
-   npm run build
-   fly launch --name ac-tracker-web
-   fly deploy
-   ```
+4. Railway builds and deploys the container.  The `/api/health` endpoint is used as the health-check.
+5. Open your Railway URL in a browser — the app is live. ✅
+
+> **First run:** `prisma db push` runs automatically inside the container on every start, creating the schema if it doesn't exist.  This is safe and idempotent.
+
+---
+
+### Option 2: Docker (generic container platforms)
+
+Build and run locally or on any platform that supports Docker (Render, Fly.io, Google Cloud Run, etc.):
+
+```bash
+# Build the image (frontend + backend bundled together)
+docker build -t ac-tracker .
+
+# Run — replace the placeholder values with your real settings
+docker run -d \
+  -p 3000:3000 \
+  -e DATABASE_URL="postgresql://user:password@host:5432/ac_tracker" \
+  -e FRONTEND_URL="http://localhost:3000" \
+  --name ac-tracker \
+  ac-tracker
+```
+
+Open `http://localhost:3000` in your browser.
+
+**Docker Compose example** (adds a local PostgreSQL container):
+
+```yaml
+# docker-compose.yml
+version: "3.9"
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://acuser:acpass@db:5432/ac_tracker
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: acuser
+      POSTGRES_PASSWORD: acpass
+      POSTGRES_DB: ac_tracker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+```
+
+```bash
+docker compose up -d
+```
+
+---
+
+### Option 3: PaaS with separate build / start phases (Render, Heroku, etc.)
+
+For platforms where you set a **build command** and a **start command** separately:
+
+| Setting | Value |
+|---|---|
+| **Root directory** | *(repo root)* |
+| **Build command** | `cd frontend && npm ci && VITE_API_URL="" npm run build && cp -r dist ../backend/public && cd ../backend && npm ci && npm run build` |
+| **Start command** | `cd backend && npx prisma db push --skip-generate && node dist/server.js` |
+
+Alternatively, use the **`start.sh`** script (combines build + start in one step):
+
+```bash
+bash start.sh
+```
+
+Set environment variables in the platform dashboard (same as the Railway table above).
+
+> **Render note:** Free-tier web services spin down after 15 minutes of inactivity; the first request after sleep may take ~30 seconds.
+
+---
 
 ### Option 4: Raspberry Pi (Self-hosted)
 
-> This gives you a local server accessible on your home network (and optionally exposed via a tunnel).
+> Gives you a local server accessible on your home network with optional remote access.
 
-**Prerequisites:**
-- Raspberry Pi 3B+ or newer with Raspberry Pi OS (64-bit recommended)
-- Node.js 18+: `curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt-get install -y nodejs`
-
-**Setup:**
+**Prerequisites:** Node.js 18+, npm 9+
 
 ```bash
-# 1. Clone the repo
+# 1. Clone and set up
 git clone https://github.com/dakomi/HouseholdACTracker.git
 cd HouseholdACTracker
 
-# 2. Backend
+# 2. Build frontend (relative API URLs for same-origin serving)
+cd frontend
+npm install
+VITE_API_URL="" npm run build
+cd ..
+
+# 3. Copy frontend build to backend/public
+mkdir -p backend/public
+cp -r frontend/dist/* backend/public/
+
+# 4. Build backend
 cd backend
 npm install
 cp .env.example .env
-# Edit .env: set FRONTEND_URL to your Pi's local IP, e.g. http://192.168.1.100:3000
+# Edit .env: set FRONTEND_URL to http://<your-pi-ip>:3001
 npx prisma db push
 npm run build
-# Optional: load sample data for demos/testing
-# npm run prisma:seed
 
-# 3. Frontend
-cd ../frontend
-# Edit/create .env.production with your Pi's local IP
-echo "VITE_API_URL=http://192.168.1.100:3001" > .env.production
-npm install
-npm run build
-
-# 4. Install PM2 to keep the server alive
+# 5. Start (PM2 keeps it alive across reboots)
 npm install -g pm2
-cd ../backend
-pm2 start dist/server.js --name ac-tracker-api
-pm2 save
-pm2 startup  # Follow the printed command to auto-start on boot
-
-# 5. Serve frontend with a simple static server
-npm install -g serve
-pm2 start "serve -s /home/pi/HouseholdACTracker/frontend/dist -p 3000" --name ac-tracker-web
-pm2 save
+pm2 start dist/server.js --name ac-tracker
+pm2 save && pm2 startup  # follow the printed command
 ```
 
-**Access the app:**
-- From any device on your home network: `http://192.168.1.100:3000`
-- Install as PWA from your phone's browser → "Add to Home Screen"
+**Access the app:** `http://<pi-ip>:3001` (the backend now serves the frontend too).
 
-**Optional — Remote Access via Cloudflare Tunnel (free):**
+**Optional — Remote access via Cloudflare Tunnel (free):**
+
 ```bash
-# Install cloudflared
-curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb -o cloudflared.deb
-sudo dpkg -i cloudflared.deb
-
-# Create a tunnel (requires free Cloudflare account)
 cloudflared tunnel login
 cloudflared tunnel create ac-tracker
-cloudflared tunnel route dns ac-tracker ac-tracker.yourdomain.com
+cloudflared tunnel route dns ac-tracker ac.yourdomain.com
+cloudflared tunnel run --url http://localhost:3001 ac-tracker
 ```
+
+---
+
+### Security notes for public deployments
+
+| Topic | Status |
+|---|---|
+| **Secrets** | All tokens / passwords are read from environment variables; no defaults are hardcoded. |
+| **CORS** | Controlled by `FRONTEND_URL`; only that origin is allowed for cross-origin requests. |
+| **Admin endpoints** | Protected by the `requireAdmin` middleware (`x-user-id` header + DB lookup). |
+| **Data exposure** | No unauthenticated admin or debug endpoints are exposed. |
+| **SQLite on PaaS** | SQLite data is lost when the container restarts — use PostgreSQL for persistence. |
+| **HTTPS** | Railway, Render, and Fly.io provide TLS automatically. For self-hosted, put the app behind a reverse proxy (Caddy, nginx) or use Cloudflare Tunnel. |
 
 ---
 
